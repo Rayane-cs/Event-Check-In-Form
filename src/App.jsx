@@ -91,20 +91,18 @@ export default function App() {
 
     setLoading(true);
     try {
+      // Use text/plain to bypass the CORS preflight OPTIONS request, halving network latency
       const res = await fetch(`${API_BASE}/api/check-in`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain" },
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
 
-      if (res.status === 201) {
+      // Treat 201 Created and 409 Conflict (Already checked in) equally as visual successes
+      if (res.status === 201 || res.status === 409) {
         localStorage.setItem(storageKey(), JSON.stringify({ name: trimmedName, at: new Date().toISOString() }));
         setSuccessName(trimmedName);
-        return;
-      }
-      if (res.status === 409) {
-        setFormError(data.error || "You have already checked in today with these details.");
         return;
       }
       if (res.status === 403) {
