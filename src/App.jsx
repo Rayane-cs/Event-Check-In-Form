@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useLang } from "./contexts/LanguageContext";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 const EVENT_NAME = import.meta.env.VITE_EVENT_NAME || "Event presence";
@@ -21,12 +23,14 @@ function storageKey() {
 }
 
 export default function App() {
+  const { t } = useLang();
   const [fullName, setFullName] = useState("");
   const [level, setLevel] = useState("");
   const [specialityKey, setSpecialityKey] = useState("");
   const [specialityOther, setSpecialityOther] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successName, setSuccessName] = useState("");
 
@@ -45,31 +49,35 @@ export default function App() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError("");
+    setFormError("");
+    setFieldErrors({});
 
     const trimmedName = sanitize(fullName, 255);
     const trimmedLevel = (level || "").trim();
     const trimmedSpecialityOther = sanitize(specialityOther, 500);
     const trimmedFeedback = sanitize(feedback, 4000);
 
+    const newFieldErrors = {};
+
     if (!trimmedName) {
-      setError("Please enter your full name.");
-      return;
-    }
-    if (!trimmedLevel) {
-      setError("Please select your level.");
-      return;
+      newFieldErrors.fullName = t.presence.required;
     }
     if (!specialityKey) {
-      setError("Please select a speciality.");
-      return;
+      newFieldErrors.specialityKey = t.presence.required;
     }
     if (specialityKey === "autre" && !trimmedSpecialityOther) {
-      setError("Please type your speciality.");
+      newFieldErrors.specialityOther = t.presence.required;
+    }
+    if (!trimmedLevel) {
+      newFieldErrors.level = t.presence.required;
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
     if (!API_BASE) {
-      setError("Missing API: set VITE_API_BASE in .env.");
+      setFormError("Missing API: set VITE_API_BASE in .env.");
       return;
     }
 
@@ -96,17 +104,17 @@ export default function App() {
         return;
       }
       if (res.status === 409) {
-        setError(data.error || "You have already checked in today with these details.");
+        setFormError(data.error || "You have already checked in today with these details.");
         return;
       }
       if (res.status === 403) {
-        setError(data.error || "Check-in is not open today.");
+        setFormError(data.error || "Check-in is not open today.");
         return;
       }
-      setError(data.error || "Something went wrong. Please try again.");
+      setFormError(data.error || t.presence.error);
     } catch (err) {
       console.error(err);
-      setError("Network error — please try again.");
+      setFormError("Network error — please try again.");
     } finally {
       setLoading(false);
     }
@@ -120,91 +128,101 @@ export default function App() {
       <div id="success-layer" className="success-overlay" aria-hidden="false">
         <div className="success-card">
           <div className="success-icon">✓</div>
-          <h2>You're checked in</h2>
+          <h2>{t.presence.success}</h2>
           <p>
             Thank you, <strong>{successName}</strong>, for participating in {EVENT_NAME}. Your presence matters.
           </p>
-          <p className="mono">See you at the event!</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="wrap">
-      <div className="logo-row">
-        <h1>Event Presence Check-in</h1>
-        <p>{EVENT_NAME} — quick presence & feedback</p>
-      </div>
+    <>
+      <LanguageSwitcher />
+      <div className="wrap">
+        <div className="logo-row">
+          <img src="/club-logo.webp" alt="Club Logo" className="club-logo" />
+          <h1>{t.presence.title}</h1>
+          <p>{t.presence.subtitle}</p>
+        </div>
 
-      <div id="main-card">
-        <form id="checkin-form" noValidate onSubmit={handleSubmit}>
-          <div id="form-error" role="alert" className={error ? "is-visible" : ""}>{error}</div>
+        <div id="main-card">
+          <form id="checkin-form" noValidate onSubmit={handleSubmit}>
+            <div id="form-error" role="alert" className={formError ? "is-visible" : ""}>{formError}</div>
 
-          <div className="field">
-            <label htmlFor="full_name">Full name</label>
-            <input
-              id="full_name"
-              name="full_name"
-              type="text"
-              autoComplete="name"
-              required
-              placeholder="Your full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="speciality">Speciality</label>
-            <select id="speciality" name="speciality" required value={specialityKey} onChange={(e) => setSpecialityKey(e.target.value)}>
-              <option value="">Select speciality</option>
-              <option value="informatique">Informatique</option>
-              <option value="mathematique">Mathématiques</option>
-              <option value="physique">Physique</option>
-              <option value="autre">Other</option>
-            </select>
-            <div id="other-wrap" className={showOther ? "is-visible" : ""}>
-              <label htmlFor="speciality_other" style={{ marginTop: "12px" }}>Your speciality</label>
+            <div className={`field ${fieldErrors.fullName ? "has-error" : ""}`}>
+              <label htmlFor="full_name">{t.presence.fullName}</label>
               <input
-                id="speciality_other"
+                id="full_name"
+                name="full_name"
                 type="text"
-                placeholder="Type your speciality"
-                autoComplete="off"
-                value={specialityOther}
-                onChange={(e) => setSpecialityOther(e.target.value)}
-                required={showOther}
+                autoComplete="name"
+                required
+                placeholder={t.presence.fullNamePh}
+                value={fullName}
+                onChange={(e) => { setFullName(e.target.value); setFieldErrors(prev => ({...prev, fullName: ""})) }}
               />
+              {fieldErrors.fullName && <div className="field-error-msg">{fieldErrors.fullName}</div>}
             </div>
-          </div>
 
-          <div className="field">
-            <label htmlFor="level">Level</label>
-            <select id="level" name="level" required value={level} onChange={(e) => setLevel(e.target.value)}>
-              <option value="">Select level</option>
-              <option value="L1">L1</option>
-              <option value="L2">L2</option>
-              <option value="L3">L3</option>
-              <option value="M1">M1</option>
-              <option value="M2">M2</option>
-            </select>
-          </div>
+            <div className={`field ${fieldErrors.specialityKey ? "has-error" : ""}`}>
+              <label htmlFor="speciality">{t.presence.speciality}</label>
+              <select id="speciality" name="speciality" required value={specialityKey} onChange={(e) => { setSpecialityKey(e.target.value); setFieldErrors(prev => ({...prev, specialityKey: ""})) }}>
+                <option value="">{t.presence.specialityPh}</option>
+                {t.presence.specialities.slice(0, -1).map((spec, i) => {
+                  const keys = ["informatique", "physique", "mathematique"];
+                  return <option key={i} value={keys[i]}>{spec}</option>;
+                })}
+                <option value="autre">{t.presence.specialities[t.presence.specialities.length - 1]}</option>
+              </select>
+              {fieldErrors.specialityKey && <div className="field-error-msg">{fieldErrors.specialityKey}</div>}
+              <div id="other-wrap" className={`sub-field ${showOther ? "is-visible" : ""} ${fieldErrors.specialityOther ? "has-error" : ""}`}>
+                <label htmlFor="speciality_other" style={{ marginTop: "12px" }}>{t.presence.speciality}</label>
+                <input
+                  id="speciality_other"
+                  type="text"
+                  placeholder={t.presence.specialityPh}
+                  autoComplete="off"
+                  value={specialityOther}
+                  onChange={(e) => { setSpecialityOther(e.target.value); setFieldErrors(prev => ({...prev, specialityOther: ""})) }}
+                  required={showOther}
+                />
+                {fieldErrors.specialityOther && <div className="field-error-msg">{fieldErrors.specialityOther}</div>}
+              </div>
+            </div>
 
-          <div className="field">
-            <label htmlFor="feedback">Feedback <span style={{ textTransform: "none", letterSpacing: 0, color: "var(--muted)", fontWeight: 400 }}>(optional)</span></label>
-            <textarea id="feedback" name="feedback" placeholder="Share your thoughts…" value={feedback} onChange={(e) => setFeedback(e.target.value)} />
-          </div>
+            <div className={`field ${fieldErrors.level ? "has-error" : ""}`}>
+              <label htmlFor="level">{t.presence.level}</label>
+              <select id="level" name="level" required value={level} onChange={(e) => { setLevel(e.target.value); setFieldErrors(prev => ({...prev, level: ""})) }}>
+                <option value="">{t.presence.levelPh}</option>
+                <option value="L1">L1</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+                <option value="M1">M1</option>
+                <option value="M2">M2</option>
+              </select>
+              {fieldErrors.level && <div className="field-error-msg">{fieldErrors.level}</div>}
+            </div>
 
-          <button type="submit" className="btn-submit" id="submit-btn" disabled={loading}>
-            <span className="btn-inner">
-              <span className={loading ? "spinner is-active" : "spinner"} aria-hidden="true"></span>
-              <span id="submit-label">{loading ? "Sending…" : "Submit check-in"}</span>
-            </span>
-          </button>
-        </form>
+            <div className="field">
+              <label htmlFor="feedback">{t.presence.feedback}</label>
+              <textarea id="feedback" name="feedback" placeholder={t.presence.feedbackPh} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+            </div>
+
+            <button type="submit" className="btn-submit" id="submit-btn" disabled={loading}>
+              <span className="btn-inner">
+                <span className={loading ? "spinner is-active" : "spinner"} aria-hidden="true"></span>
+                <span id="submit-label">{loading ? t.presence.submitting : t.presence.submit}</span>
+              </span>
+            </button>
+          </form>
+        </div>
+
+        <footer>One check-in per day · Thank you for participating</footer>
       </div>
-
-      <footer>One check-in per day · Thank you for participating</footer>
-    </div>
+    </>
   );
 }
+
+
