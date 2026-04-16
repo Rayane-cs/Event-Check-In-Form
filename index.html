@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Event presence check-in</title>
+  <meta name="description" content="Official Event Check-In Form. Quickly register your presence and provide feedback for today's event." />
+  <title>Event Presence Check-In</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #030712;
-      --card: #0c1222;
-      --line: rgba(62, 210, 255, 0.25);
-      --accent: #3ed2ff;
-      --accent2: #818cf8;
-      --text: #e8f4ff;
-      --muted: #8ba4bc;
-      --err: #f87171;
-      --glow: rgba(62, 210, 255, 0.35);
+      --primary: #5F7F94;
+      --secondary: #8C7A5E;
+      --accent: #BFAE8E;
+      --bg: #1a2630;
+      --card: #242f3a;
+      --text: #D6C8AD;
+      --muted: #9FB6C7;
+      --border: rgba(191, 174, 142, 0.2);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -31,29 +31,16 @@
     .bg-grid {
       position: fixed;
       inset: 0;
-      background-image:
-        radial-gradient(circle at 1px 1px, rgba(62,210,255,0.12) 1px, transparent 0);
+      background-image: radial-gradient(circle at 1px 1px, rgba(166, 147, 116, 0.12) 1px, transparent 0);
       background-size: 48px 48px;
       animation: gridDrift 24s linear infinite;
       pointer-events: none;
       z-index: 0;
     }
-    @keyframes gridDrift {
-      from { transform: translate(0, 0); }
-      to { transform: translate(-48px, -48px); }
-    }
-    .orb {
-      position: fixed;
-      width: 420px;
-      height: 420px;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.35;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .orb-a { top: -120px; right: -80px; background: #3b82f6; animation: float1 10s ease-in-out infinite; }
-    .orb-b { bottom: -100px; left: -60px; background: #22d3ee; animation: float2 12s ease-in-out infinite; }
+    @keyframes gridDrift { from { transform: translate(0, 0); } to { transform: translate(-48px, -48px); } }
+    .orb { position: fixed; width: 420px; height: 420px; border-radius: 50%; filter: blur(80px); opacity: 0.3; pointer-events: none; z-index: 0; }
+    .orb-a { top: -140px; right: -80px; background: #8C7A5E; animation: float1 10s ease-in-out infinite; }
+    .orb-b { bottom: -120px; left: -60px; background: #5F7F94; animation: float2 12s ease-in-out infinite; }
     @keyframes float1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-20px, 30px); } }
     @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(24px, -20px); } }
 
